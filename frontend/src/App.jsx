@@ -94,6 +94,13 @@ function App() {
   const [boardColumns, setBoardColumns] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
 
+  // Add Task states
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskColumn, setNewTaskColumn] = useState("");
+  const [savingTask, setSavingTask] = useState(false);
+
   // Fetch boards after login
   useEffect(() => {
     if (token) {
@@ -155,6 +162,7 @@ function App() {
     setBoardColumns([]);
     setTasksLoading(true);
     setError("");
+    setShowAddTask(false);
 
     try {
       await loadBoardData(board.id);
@@ -256,6 +264,52 @@ function App() {
     }
   };
 
+  // Create a new task
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+
+    if (!newTaskTitle.trim() || !newTaskColumn) {
+      setError("Please enter a task title and select a column.");
+      return;
+    }
+
+    setSavingTask(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API}/api/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          board_id: selectedBoard.id,
+          column_id: newTaskColumn,
+          title: newTaskTitle.trim(),
+          description: newTaskDescription.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create task");
+      }
+
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskColumn("");
+      setShowAddTask(false);
+
+      await loadBoardData(selectedBoard.id);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingTask(false);
+    }
+  };
+
   // Login
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -289,7 +343,6 @@ function App() {
   // Logout
   const handleLogout = () => {
     socket.disconnect();
-
     localStorage.removeItem("token");
 
     setToken("");
@@ -300,6 +353,7 @@ function App() {
     setEmail("");
     setPassword("");
     setError("");
+    setShowAddTask(false);
   };
 
   // Login page
@@ -375,12 +429,73 @@ function App() {
                 </p>
               </div>
 
-              <button onClick={() => setSelectedBoard(null)}>
+              <button
+                onClick={() => {
+                  setSelectedBoard(null);
+                  setShowAddTask(false);
+                  setError("");
+                }}
+              >
                 Back to Boards
               </button>
             </div>
 
             {error && <p className="error">{error}</p>}
+
+            {/* Add Task */}
+            <div className="add-task-area">
+              <button
+                onClick={() => {
+                  setShowAddTask(!showAddTask);
+                  setError("");
+                }}
+              >
+                {showAddTask ? "Cancel" : "+ Add Task"}
+              </button>
+
+              {showAddTask && (
+                <form
+                  onSubmit={handleCreateTask}
+                  className="add-task-form"
+                >
+                  <h3>Create New Task</h3>
+
+                  <input
+                    type="text"
+                    placeholder="Task title"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    required
+                  />
+
+                  <textarea
+                    placeholder="Task description"
+                    value={newTaskDescription}
+                    onChange={(e) =>
+                      setNewTaskDescription(e.target.value)
+                    }
+                  />
+
+                  <select
+                    value={newTaskColumn}
+                    onChange={(e) => setNewTaskColumn(e.target.value)}
+                    required
+                  >
+                    <option value="">Select column</option>
+
+                    {boardColumns.map((column) => (
+                      <option key={column.id} value={column.id}>
+                        {column.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button type="submit" disabled={savingTask}>
+                    {savingTask ? "Saving..." : "Save Task"}
+                  </button>
+                </form>
+              )}
+            </div>
 
             {tasksLoading ? (
               <p>Loading tasks...</p>
