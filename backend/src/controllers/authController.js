@@ -16,8 +16,10 @@ const login = async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      "SELECT id, name, email, password_hash FROM users WHERE email = $1",
-      [email]
+      `SELECT id, name, email, password_hash
+       FROM users
+       WHERE email = $1`,
+      [email.trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
@@ -42,13 +44,39 @@ const login = async (req, res) => {
       });
     }
 
-    // Generate JWT
+    // Get user's membership and role
+    const membershipResult = await pool.query(
+      `SELECT
+         role,
+         tenant_id,
+         organization_id
+       FROM memberships
+       WHERE user_id = $1`,
+      [user.id]
+    );
+
+    if (membershipResult.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "User has no organization membership"
+      });
+    }
+
+    const membership = membershipResult.rows[0];
+
+    // Generate JWT with role and tenant information
     const token = jwt.sign(
-      { userId: user.id },
+      {
+        userId: user.id,
+        role: membership.role,
+        tenantId: membership.tenant_id,
+        organizationId: membership.organization_id
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
+    // Send response
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -56,7 +84,10 @@ const login = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: membership.role,
+        tenantId: membership.tenant_id,
+        organizationId: membership.organization_id
       }
     });
 

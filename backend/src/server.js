@@ -5,9 +5,12 @@ const cors = require("cors");
 const http = require("http");
 
 const pool = require("./config/db");
+
 const authRoutes = require("./routes/authRoutes");
 const boardRoutes = require("./routes/boardRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const activityRoutes = require("./routes/activityRoutes");
+
 const authMiddleware = require("./middleware/authMiddleware");
 const initializeSocket = require("./sockets/socketServer");
 
@@ -17,9 +20,11 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/activities", activityRoutes);
 
 app.get("/", (req, res) => {
   res.send("Collaborative Kanban API is running!");
@@ -34,6 +39,7 @@ app.get("/api/health", async (req, res) => {
       message: "Database connected successfully!",
       time: result.rows[0].now
     });
+
   } catch (error) {
     console.error("Health check error:", error.message);
 
@@ -52,6 +58,7 @@ app.get("/api/protected", authMiddleware, (req, res) => {
   });
 });
 
+// Socket.IO
 const io = initializeSocket(server);
 app.set("io", io);
 

@@ -263,3 +263,33 @@ body {
 .login-form * {
   box-sizing: border-box;
 }
+.activity-history {
+  width: 90%;
+  max-width: 1100px;
+  margin: 30px auto;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.activity-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 5px solid #4169e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.activity-card h3 {
+  margin-top: 0;
+  color: #3155b7;
+}
+
+.activity-card p {
+  margin: 8px 0;
+  color: #444;
+}
