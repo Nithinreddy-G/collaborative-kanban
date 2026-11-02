@@ -11,7 +11,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import "./App.css";
 
-const API = "http://localhost:5000";
+const API = "https://collaborative-kanban-80k8.onrender.com";
 
 // ==========================================
 // DRAGGABLE TASK CARD
